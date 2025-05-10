@@ -105,6 +105,15 @@ class MainActivity : ComponentActivity() {
                                 },
                                 icon = { Icon(Icons.Default.CalendarMonth, null) }
                             )
+                            NavigationDrawerItem(
+                                label = { Text("Year") },                           // ← اضافه شد
+                                selected = viewMode == ViewMode.YEAR,
+                                onClick = {
+                                    viewMode = ViewMode.YEAR
+                                    scope.launch { drawerState.close() }
+                                },
+                                icon = { Icon(Icons.Default.DateRange, null) }       // می‌تونی آیکون تغییر بدی
+                            )
                         }
                     }
                 ) {
@@ -154,6 +163,16 @@ class MainActivity : ComponentActivity() {
                                         // newDate الان اولین روز ماه کلیک‌شده است
                                         startDate = newDate
                                         viewMode = ViewMode.MONTH  // یا هر حالت دیگه که لازم داری
+                                    }
+                                )
+                                ViewMode.YEAR -> YearCalendar(
+                                    tasks = tasks,
+                                    referenceDate = startDate,
+                                    onPrev = { startDate = startDate.minusYears(10) },
+                                    onNext = { startDate = startDate.plusYears(10) },
+                                    onYearClick = { date ->
+                                        startDate = date
+                                        viewMode = ViewMode.MONTH
                                     }
                                 )
                                 else -> WeekGanttChart(
