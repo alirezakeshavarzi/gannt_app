@@ -20,13 +20,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.time.LocalDate
 import java.time.Month
 import java.time.format.DateTimeFormatter
-import java.util.Locale
+import java.time.format.TextStyle
+import java.util.*
 
 @Composable
 fun MonthCalendar(
@@ -36,11 +38,11 @@ fun MonthCalendar(
     onNext: () -> Unit,
     onMonthClick: (LocalDate) -> Unit = {}
 ) {
-    // ۱۲ ماه سال جاری
     val year = referenceDate.year
     val months = Month.values().toList()
     val scrollState = rememberScrollState()
     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    val todayMonth = LocalDate.now().monthValue
 
     Column(
         Modifier
@@ -53,7 +55,7 @@ fun MonthCalendar(
                 }
             }
     ) {
-        // سربرگ با کنترل سال
+        // Header: کنترل تغییر سال
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -76,35 +78,52 @@ fun MonthCalendar(
         Divider()
         Spacer(Modifier.height(8.dp))
 
-        // سطر نام ماه‌ها
-        Row(Modifier.fillMaxWidth()) {
-            Spacer(Modifier.width(80.dp)) // فضای ستون نام تسک
-            months.forEach { m ->
-                Box(
-                    Modifier
-                        .weight(1f)
-                        .aspectRatio(1f),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = m.getDisplayName(java.time.format.TextStyle.SHORT, Locale.getDefault()),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
-                    )
+        // دو ردیف ۶ ماه برای خوانایی بهتر
+        val firstHalf = months.take(6)
+        val secondHalf = months.drop(6)
+
+        listOf(firstHalf, secondHalf).forEach { half ->
+            Row(Modifier.fillMaxWidth()) {
+                half.forEachIndexed { idx, month ->
+                    val monthIndex = if (half === firstHalf) idx + 1 else idx + 7
+                    val isCurrent = monthIndex == todayMonth
+                    Box(
+                        Modifier
+                            .weight(1f)
+                            .aspectRatio(1f)
+                            .background(
+                                if (isCurrent) Color(0xFFE3F2FD)
+                                else Color.Transparent,
+                                shape = RoundedCornerShape(4.dp)
+                            )
+                            .border(0.5.dp, Color.LightGray, RoundedCornerShape(4.dp))
+                            .clickable {
+                                onMonthClick(LocalDate.of(year, monthIndex, 1))
+                            }
+                            .padding(vertical = 4.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = month.getDisplayName(TextStyle.SHORT, Locale.getDefault()),
+                            fontSize = 12.sp,
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Medium
+                        )
+                    }
                 }
             }
+            Spacer(Modifier.height(4.dp))
         }
 
         Divider(Modifier.padding(vertical = 4.dp))
 
-        // هر ردیف یک تسک
+        // گانت‌چارت: هر ردیف یک تسک، هر ستون یک ماه
         Column(
             Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
         ) {
             tasks.forEach { task ->
-                // parse تاریخ شروع/پایان
                 val start = LocalDate.parse(task.start, formatter)
                 val end = LocalDate.parse(task.end, formatter)
 
@@ -114,7 +133,7 @@ fun MonthCalendar(
                         .height(50.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // اسم تسک
+                    // نام تسک
                     Box(
                         Modifier
                             .width(80.dp)
@@ -123,28 +142,24 @@ fun MonthCalendar(
                     ) {
                         Text(task.name, fontSize = 14.sp)
                     }
-                    // ستون‌های ۱۲ ماه
+                    // ستون‌های ماه
                     months.forEachIndexed { idx, month ->
-                        // آیا این ماه بین بازه‌ی تسک هست؟
-                        val inRange =
-                            LocalDate.of(year, month, 1) <= end &&
-                                    LocalDate.of(year, month, month.length(year % 4 == 0)) >= start
+                        val monthIndex = idx + 1
+                        val monthStart = LocalDate.of(year, monthIndex, 1)
+                        val monthEnd = monthStart.withDayOfMonth(month.length(year % 4 == 0))
+                        val inRange = !(end < monthStart || start > monthEnd)
 
                         Box(
                             Modifier
                                 .weight(1f)
                                 .fillMaxHeight()
-                                .padding(2.dp)
+                                .padding(horizontal = 2.dp)
                                 .background(
                                     if (inRange) Color(android.graphics.Color.parseColor(task.color))
                                     else Color.Transparent,
                                     shape = RoundedCornerShape(4.dp)
                                 )
                                 .border(0.5.dp, Color.LightGray)
-                                .clickable {
-                                    // کاربر ماه رو کلیک کرد
-                                    onMonthClick(LocalDate.of(year, idx + 1, 1))
-                                }
                         )
                     }
                 }
