@@ -29,19 +29,29 @@ android {
             )
         }
     }
+
     compileOptions {
+        // Java 8+ language features
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
+
+        // **Enable desugaring** so java.time.* works back to API 24
+        isCoreLibraryDesugaringEnabled = true
     }
+
     kotlinOptions {
         jvmTarget = "1.8"
     }
+
     buildFeatures {
         compose = true
     }
+
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.1"
+        // Make sure this matches your Compose BOM version
+        kotlinCompilerExtensionVersion = "1.5.3"
     }
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -50,6 +60,18 @@ android {
 }
 
 dependencies {
+    implementation("androidx.datastore:datastore-preferences:1.1.6")
+    implementation(libs.androidx.datastore.preferences.core.android)
+    // 👉 Pull in the desugaring library directly
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.3")
+
+    // JSON parsing (if still needed)
+    implementation("com.google.code.gson:gson:2.10.1")
+
+    // AnyChart (if you decide to mix in the Android‑View‑based chart)
+    implementation("com.github.AnyChart:AnyChart-Android:1.1.2")
+
+    // Compose + Material3
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -58,12 +80,19 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+
+    // Icons (for FloatingActionButton, etc.)
+    implementation("androidx.compose.material:material-icons-core:1.5.0")
+    implementation("androidx.compose.material:material-icons-extended:1.5.0")
+
+    // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
+
+    // Debug
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-    implementation("com.anychart:anychart-android:1.1.2")
 }
