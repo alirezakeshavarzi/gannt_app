@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -13,7 +14,19 @@ import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.CalendarViewWeek
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material3.*
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -22,27 +35,24 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 
 class MainActivity : ComponentActivity() {
-    @SuppressLint("CoroutineCreationDuringComposition")
     @OptIn(ExperimentalMaterial3Api::class)
+    @SuppressLint("CoroutineCreationDuringComposition")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             MaterialTheme {
                 val scope = rememberCoroutineScope()
                 val drawerState = rememberDrawerState(DrawerValue.Closed)
-
-                // state های اصلی
                 val tasks = remember { mutableStateListOf<Task>() }
                 var showDialog by remember { mutableStateOf(false) }
                 var startDate by remember { mutableStateOf(LocalDate.now()) }
                 var viewMode by remember { mutableStateOf(ViewMode.WEEK) }
 
-                // بارگذاری از DataStore
                 LaunchedEffect(Unit) {
                     DataStoreManager.getTasksFlow(applicationContext)
-                        .collectLatest { saved ->
+                        .collectLatest {
                             tasks.clear()
-                            tasks.addAll(saved)
+                            tasks.addAll(it)
                         }
                 }
 
@@ -50,7 +60,6 @@ class MainActivity : ComponentActivity() {
                     drawerState = drawerState,
                     drawerContent = {
                         ModalDrawerSheet {
-                            Text("نمایش:", Modifier.padding(16.dp), style = MaterialTheme.typography.titleMedium)
                             NavigationDrawerItem(
                                 label = { Text("Day") },
                                 selected = viewMode == ViewMode.DAY,
@@ -58,7 +67,7 @@ class MainActivity : ComponentActivity() {
                                     viewMode = ViewMode.DAY
                                     scope.launch { drawerState.close() }
                                 },
-                                icon = { Icon(Icons.Default.CalendarToday, contentDescription = null) }
+                                icon = { Icon(Icons.Default.CalendarToday, null) }
                             )
                             NavigationDrawerItem(
                                 label = { Text("3 Days") },
@@ -67,7 +76,7 @@ class MainActivity : ComponentActivity() {
                                     viewMode = ViewMode.THREE_DAYS
                                     scope.launch { drawerState.close() }
                                 },
-                                icon = { Icon(Icons.Default.DateRange, contentDescription = null) }
+                                icon = { Icon(Icons.Default.DateRange, null) }
                             )
                             NavigationDrawerItem(
                                 label = { Text("Week") },
@@ -76,7 +85,7 @@ class MainActivity : ComponentActivity() {
                                     viewMode = ViewMode.WEEK
                                     scope.launch { drawerState.close() }
                                 },
-                                icon = { Icon(Icons.Default.CalendarViewWeek, contentDescription = null) }
+                                icon = { Icon(Icons.Default.CalendarViewWeek, null) }
                             )
                             NavigationDrawerItem(
                                 label = { Text("Month") },
@@ -85,7 +94,7 @@ class MainActivity : ComponentActivity() {
                                     viewMode = ViewMode.MONTH
                                     scope.launch { drawerState.close() }
                                 },
-                                icon = { Icon(Icons.Default.CalendarMonth, contentDescription = null) }
+                                icon = { Icon(Icons.Default.CalendarMonth, null) }
                             )
                         }
                     }
@@ -95,13 +104,16 @@ class MainActivity : ComponentActivity() {
                             CenterAlignedTopAppBar(
                                 title = { Text("Gantt Chart") },
                                 navigationIcon = {
-                                    IconButton(
-                                        onClick = { scope.launch { drawerState.open() } }
-                                    ) {
-                                        Icon(
-                                            Icons.Default.Menu,
-                                            contentDescription = "Open menu"
-                                        )
+                                    IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                                        Icon(Icons.Default.Menu, "Menu")
+                                    }
+                                },
+                                actions = {
+                                    IconButton(onClick = {
+                                        startDate = LocalDate.now()
+                                        viewMode = ViewMode.WEEK
+                                    }) {
+                                        Icon(Icons.Default.CalendarToday, "Today")
                                     }
                                 }
                             )
@@ -113,34 +125,42 @@ class MainActivity : ComponentActivity() {
                         }
                     ) { padding ->
                         Box(Modifier.padding(padding)) {
-                            WeekGanttChart(
-                                tasks = tasks,
-                                startDate = startDate,
-                                viewMode = viewMode,
-                                onPrev = {
-                                    startDate = when (viewMode) {
-                                        ViewMode.DAY        -> startDate.minusDays(1)
-                                        ViewMode.THREE_DAYS -> startDate.minusDays(3)
-                                        ViewMode.WEEK       -> startDate.minusWeeks(1)
-                                        ViewMode.MONTH      -> startDate.minusMonths(1)
-                                        ViewMode.YEAR       -> startDate.minusYears(1)
+                            when (viewMode) {
+                                ViewMode.MONTH -> MonthCalendar(
+                                    referenceDate = startDate,
+                                    onPrev = { startDate = startDate.minusMonths(1) },
+                                    onNext = { startDate = startDate.plusMonths(1) },
+                                    onDateClick = { date ->
+                                        startDate = date
+                                        viewMode = ViewMode.DAY
                                     }
-                                },
-                                onNext = {
-                                    startDate = when (viewMode) {
-                                        ViewMode.DAY        -> startDate.plusDays(1)
-                                        ViewMode.THREE_DAYS -> startDate.plusDays(3)
-                                        ViewMode.WEEK       -> startDate.plusWeeks(1)
-                                        ViewMode.MONTH      -> startDate.plusMonths(1)
-                                        ViewMode.YEAR       -> startDate.plusYears(1)
+                                )
+                                else -> WeekGanttChart(
+                                    tasks = tasks,
+                                    startDate = startDate,
+                                    viewMode = viewMode,
+                                    onPrev = {
+                                        startDate = when (viewMode) {
+                                            ViewMode.DAY        -> startDate.minusDays(1)
+                                            ViewMode.THREE_DAYS -> startDate.minusDays(3)
+                                            ViewMode.WEEK       -> startDate.minusWeeks(1)
+                                            else                -> startDate
+                                        }
+                                    },
+                                    onNext = {
+                                        startDate = when (viewMode) {
+                                            ViewMode.DAY        -> startDate.plusDays(1)
+                                            ViewMode.THREE_DAYS -> startDate.plusDays(3)
+                                            ViewMode.WEEK       -> startDate.plusWeeks(1)
+                                            else                -> startDate
+                                        }
+                                    },
+                                    onDateClick = { date ->
+                                        startDate = date
+                                        viewMode = ViewMode.DAY
                                     }
-                                },
-                                onDateClick = { date ->
-                                    // وقتی کاربر روی تاریخ زد، وارد نماى روزانه شو
-                                    startDate = date
-                                    viewMode = ViewMode.DAY
-                                }
-                            )
+                                )
+                            }
 
                             if (showDialog) {
                                 AddTaskDialog(
