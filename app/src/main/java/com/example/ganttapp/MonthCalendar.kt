@@ -5,7 +5,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
@@ -21,29 +23,24 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import java.time.DayOfWeek
 import java.time.LocalDate
-import java.time.format.TextStyle
-import java.util.*
+import java.time.Month
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @Composable
 fun MonthCalendar(
+    tasks: List<Task>,
     referenceDate: LocalDate,
     onPrev: () -> Unit,
     onNext: () -> Unit,
-    onDateClick: (LocalDate) -> Unit = {}
+    onMonthClick: (LocalDate) -> Unit = {}
 ) {
-    val firstOfMonth = referenceDate.withDayOfMonth(1)
-    val monthLength = referenceDate.lengthOfMonth()
-    val firstDowValue = firstOfMonth.dayOfWeek.value % 7
-    val totalCells = ((firstDowValue + monthLength + 6) / 7) * 7
-    val dates = List<LocalDate?>(totalCells) { idx ->
-        val di = idx - firstDowValue
-        if (di in 0 until monthLength) firstOfMonth.plusDays(di.toLong()) else null
-    }
-    val dowLabels = DayOfWeek.values().toList().let {
-        listOf(it[6]) + it.subList(0, 6)
-    }.map { it.getDisplayName(TextStyle.SHORT, Locale.getDefault()) }
+    // ۱۲ ماه سال جاری
+    val year = referenceDate.year
+    val months = Month.values().toList()
+    val scrollState = rememberScrollState()
+    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
     Column(
         Modifier
@@ -56,64 +53,99 @@ fun MonthCalendar(
                 }
             }
     ) {
+        // سربرگ با کنترل سال
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            IconButton(onClick = onPrev) { Icon(Icons.Default.ArrowBack, null) }
+            IconButton(onClick = onPrev) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "سال قبل")
+            }
             Text(
-                "${referenceDate.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${referenceDate.year}",
+                text = year.toString(),
                 fontSize = 20.sp,
                 fontWeight = FontWeight.SemiBold
             )
-            IconButton(onClick = onNext) { Icon(Icons.Default.ArrowForward, null) }
+            IconButton(onClick = onNext) {
+                Icon(Icons.Default.ArrowForward, contentDescription = "سال بعد")
+            }
         }
+
         Spacer(Modifier.height(8.dp))
         Divider()
         Spacer(Modifier.height(8.dp))
+
+        // سطر نام ماه‌ها
         Row(Modifier.fillMaxWidth()) {
-            dowLabels.forEach {
-                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                    Text(it, fontSize = 12.sp, color = Color.Gray)
+            Spacer(Modifier.width(80.dp)) // فضای ستون نام تسک
+            months.forEach { m ->
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .aspectRatio(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = m.getDisplayName(java.time.format.TextStyle.SHORT, Locale.getDefault()),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
+                    )
                 }
             }
         }
-        Spacer(Modifier.height(4.dp))
-        val today = LocalDate.now()
-        dates.chunked(7).forEach { week ->
-            Row(Modifier.fillMaxWidth()) {
-                week.forEach { date ->
-                    val m = Modifier
-                        .weight(1f)
-                        .aspectRatio(1f)
-                        .padding(2.dp)
-                        .then(if (date != null) Modifier.clickable { onDateClick(date) } else Modifier)
-                    Box(m, contentAlignment = Alignment.TopCenter) {
-                        date?.let {
-                            val isToday = it == today
-                            Box(
-                                Modifier
-                                    .size(30.dp)
-                                    .background(
-                                        if (isToday) Color(0xFF3F51B5) else Color.Transparent,
-                                        shape = CircleShape
-                                    )
-                                    .border(
-                                        width = 0.5.dp,
-                                        color = if (isToday) Color.Transparent else Color.LightGray,
-                                        shape = CircleShape
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    it.dayOfMonth.toString(),
-                                    fontSize = 14.sp,
-                                    color = if (isToday) Color.White else Color.Black,
-                                    fontWeight = FontWeight.Normal
+
+        Divider(Modifier.padding(vertical = 4.dp))
+
+        // هر ردیف یک تسک
+        Column(
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+        ) {
+            tasks.forEach { task ->
+                // parse تاریخ شروع/پایان
+                val start = LocalDate.parse(task.start, formatter)
+                val end = LocalDate.parse(task.end, formatter)
+
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // اسم تسک
+                    Box(
+                        Modifier
+                            .width(80.dp)
+                            .padding(4.dp),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        Text(task.name, fontSize = 14.sp)
+                    }
+                    // ستون‌های ۱۲ ماه
+                    months.forEachIndexed { idx, month ->
+                        // آیا این ماه بین بازه‌ی تسک هست؟
+                        val inRange =
+                            LocalDate.of(year, month, 1) <= end &&
+                                    LocalDate.of(year, month, month.length(year % 4 == 0)) >= start
+
+                        Box(
+                            Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .padding(2.dp)
+                                .background(
+                                    if (inRange) Color(android.graphics.Color.parseColor(task.color))
+                                    else Color.Transparent,
+                                    shape = RoundedCornerShape(4.dp)
                                 )
-                            }
-                        }
+                                .border(0.5.dp, Color.LightGray)
+                                .clickable {
+                                    // کاربر ماه رو کلیک کرد
+                                    onMonthClick(LocalDate.of(year, idx + 1, 1))
+                                }
+                        )
                     }
                 }
             }

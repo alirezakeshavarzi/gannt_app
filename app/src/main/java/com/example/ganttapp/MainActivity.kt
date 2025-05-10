@@ -146,12 +146,14 @@ class MainActivity : ComponentActivity() {
                         Box(Modifier.padding(padding)) {
                             when (viewMode) {
                                 ViewMode.MONTH -> MonthCalendar(
+                                    tasks = tasks,
                                     referenceDate = startDate,
-                                    onPrev = { startDate = startDate.minusMonths(1) },
-                                    onNext = { startDate = startDate.plusMonths(1) },
-                                    onDateClick = { date ->
-                                        startDate = date
-                                        viewMode = ViewMode.DAY
+                                    onPrev = { startDate = startDate.minusYears(1) },
+                                    onNext = { startDate = startDate.plusYears(1) },
+                                    onMonthClick = { newDate ->
+                                        // newDate الان اولین روز ماه کلیک‌شده است
+                                        startDate = newDate
+                                        viewMode = ViewMode.MONTH  // یا هر حالت دیگه که لازم داری
                                     }
                                 )
                                 else -> WeekGanttChart(
