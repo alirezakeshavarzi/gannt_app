@@ -6,7 +6,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -28,11 +31,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
@@ -41,6 +47,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MaterialTheme {
+                // Formatter برای نمایش نام ماه
+                val monthFormatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault())
+
                 val scope = rememberCoroutineScope()
                 val drawerState = rememberDrawerState(DrawerValue.Closed)
                 val tasks = remember { mutableStateListOf<Task>() }
@@ -102,10 +111,20 @@ class MainActivity : ComponentActivity() {
                     Scaffold(
                         topBar = {
                             CenterAlignedTopAppBar(
-                                title = { Text("Gantt Chart") },
                                 navigationIcon = {
                                     IconButton(onClick = { scope.launch { drawerState.open() } }) {
                                         Icon(Icons.Default.Menu, "Menu")
+                                    }
+                                },
+                                title = {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text("Gantt Chart")
+                                        Spacer(Modifier.width(8.dp))
+                                        Text(
+                                            text = startDate.format(monthFormatter),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
                                     }
                                 },
                                 actions = {
