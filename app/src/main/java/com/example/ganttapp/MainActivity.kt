@@ -10,12 +10,15 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -30,14 +33,14 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+@SuppressLint("CoroutineCreationDuringComposition")
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
-    @SuppressLint("CoroutineCreationDuringComposition")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             MaterialTheme {
-                // ۱) state های اصلی
+                // ۱) اصلی state ها
                 val scope = rememberCoroutineScope()
                 val drawerState = rememberDrawerState(DrawerValue.Closed)
                 val monthFormatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault())
@@ -48,7 +51,11 @@ class MainActivity : ComponentActivity() {
                 var startDate by remember { mutableStateOf(LocalDate.now()) }
                 var viewMode by remember { mutableStateOf(ViewMode.WEEK) }
 
-                // ۲) بارگذاری تسک‌ها از DataStore
+                // state های جست‌وجو
+                var showSearchDialog by remember { mutableStateOf(false) }
+                var searchQuery by remember { mutableStateOf("") }
+
+                // بارگذاری تسک‌ها
                 LaunchedEffect(Unit) {
                     DataStoreManager.getTasksFlow(applicationContext).collectLatest {
                         tasks.clear()
@@ -56,7 +63,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                // ۳) Drawer سه‌حالته
+                // Drawer سه‌حالته
                 ModalNavigationDrawer(
                     drawerState = drawerState,
                     drawerContent = {
@@ -76,7 +83,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 ) {
-                    // ۴) Scaffold اصلی با TopBar و FAB
+                    // Scaffold اصلی
                     Scaffold(
                         topBar = {
                             CenterAlignedTopAppBar(
@@ -97,11 +104,16 @@ class MainActivity : ComponentActivity() {
                                     }
                                 },
                                 actions = {
+                                    // Today
                                     IconButton(onClick = {
                                         startDate = LocalDate.now()
                                         viewMode = ViewMode.WEEK
                                     }) {
                                         Icon(Icons.Default.CalendarToday, contentDescription = "Today")
+                                    }
+                                    // Search
+                                    IconButton(onClick = { showSearchDialog = true }) {
+                                        Icon(Icons.Default.Search, contentDescription = "Search tasks")
                                     }
                                 }
                             )
@@ -114,7 +126,7 @@ class MainActivity : ComponentActivity() {
                     ) { paddingValues ->
                         Box(Modifier.padding(paddingValues)) {
 
-                            // ۵) انتخاب ویو بر اساس viewMode
+                            // محتوای اصلی بر اساس viewMode
                             when (viewMode) {
                                 ViewMode.MONTH -> MonthCalendar(
                                     tasks = tasks,
@@ -172,7 +184,7 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-                            // ۶) دیالوگ‌های افزودن/ویرایش
+                            // دیالوگ افزودن
                             if (showAddDialog) {
                                 AddTaskDialog(
                                     existingTasks = tasks,
@@ -184,6 +196,7 @@ class MainActivity : ComponentActivity() {
                                     onDismiss = { showAddDialog = false }
                                 )
                             }
+                            // دیالوگ ویرایش
                             if (showEditDialog && editingTaskIndex >= 0) {
                                 EditTaskDialog(
                                     task = tasks[editingTaskIndex],
@@ -199,10 +212,86 @@ class MainActivity : ComponentActivity() {
                                     onDismiss = { showEditDialog = false }
                                 )
                             }
+
+                            // دیالوگ جست‌وجو
+                            if (showSearchDialog) {
+                                SearchTaskDialog(
+                                    query = searchQuery,
+                                    onQueryChange = { searchQuery = it },
+                                    tasks = tasks,
+                                    onSelect = { idx ->
+                                        editingTaskIndex = idx
+                                        showEditDialog = true
+                                        showSearchDialog = false
+                                        searchQuery = ""
+                                    },
+                                    onDismiss = {
+                                        showSearchDialog = false
+                                        searchQuery = ""
+                                    }
+                                )
+                            }
                         }
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+fun SearchTaskDialog(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    tasks: List<Task>,
+    onSelect: (Int) -> Unit,
+    onDismiss: () -> Unit
+) {
+    // فیلتر بر اساس زیررشته
+    val results = remember(query, tasks) {
+        if (query.isBlank()) emptyList()
+        else tasks.mapIndexed { index, task -> index to task }
+            .filter { it.second.name.contains(query, ignoreCase = true) }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("بستن") }
+        },
+        title = { Text("جست‌وجو در تسک‌ها") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = onQueryChange,
+                    label = { Text("عبارت جست‌وجو") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(Modifier.height(8.dp))
+                if (results.isEmpty() && query.isNotBlank()) {
+                    Text("هیچ تسکی یافت نشد.", style = MaterialTheme.typography.bodySmall)
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 200.dp)
+                    ) {
+                        items(results) { (idx, task) ->
+                            Text(
+                                text = task.name,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onSelect(idx) }
+                                    .padding(8.dp)
+                            )
+                            Divider()
+                        }
+                    }
+                }
+            }
+        }
+    )
 }
