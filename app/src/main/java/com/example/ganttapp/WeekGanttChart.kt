@@ -6,9 +6,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Divider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -16,7 +17,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -37,33 +37,45 @@ fun WeekGanttChart(
         else                -> emptyList()
     }
     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+
     Column(
         Modifier
             .fillMaxSize()
             .pointerInput(Unit) { detectHorizontalDragGestures { _, drag -> if (drag > 100) onPrev() else if (drag < -100) onNext() } }
     ) {
+        // Header row
         Row(Modifier.fillMaxWidth()) {
             Spacer(Modifier.width(80.dp))
             days.forEach { day ->
-                Text(day.dayOfMonth.toString(), fontSize = 12.sp, modifier = Modifier.weight(1f).clickable { onDateClick(day) })
+                Text(day.dayOfMonth.toString(), modifier = Modifier.weight(1f).clickable { onDateClick(day) }, style = MaterialTheme.typography.bodySmall)
             }
         }
         Divider(Modifier.padding(vertical = 4.dp))
+
+        // Task rows
         Column(Modifier.verticalScroll(rememberScrollState())) {
             tasks.forEachIndexed { index, task ->
                 val s = LocalDate.parse(task.start, formatter)
                 val e = LocalDate.parse(task.end, formatter)
-                Row(Modifier.fillMaxWidth().height(50.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(50.dp)
+                        .clickable { onTaskClick(index) },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Label: white fill, grey border
                     Box(
                         Modifier
                             .width(80.dp)
                             .padding(4.dp)
-                            .background(Color.LightGray, RoundedCornerShape(20.dp))
-                            .clickable { onTaskClick(index) },
+                            .background(Color(0xFFFAFAFA), RoundedCornerShape(20.dp))
+                            .border(1.dp, Color(0xFFE0E0E0), RoundedCornerShape(20.dp)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(task.name, fontSize = 12.sp)
+                        Text(task.name, style = MaterialTheme.typography.bodyMedium)
                     }
+
                     days.forEach { day ->
                         val inRange = day in s..e
                         Box(

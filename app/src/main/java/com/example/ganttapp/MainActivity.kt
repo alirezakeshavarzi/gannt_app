@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarToday
@@ -14,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.ganttapp.DataStoreManager
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -27,9 +29,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MaterialTheme {
-                val monthFormatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault())
                 val scope = rememberCoroutineScope()
                 val drawerState = rememberDrawerState(DrawerValue.Closed)
+                val monthFormatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault())
                 val tasks = remember { mutableStateListOf<Task>() }
                 var showAddDialog by remember { mutableStateOf(false) }
                 var showEditDialog by remember { mutableStateOf(false) }
@@ -38,22 +40,43 @@ class MainActivity : ComponentActivity() {
                 var viewMode by remember { mutableStateOf(ViewMode.WEEK) }
 
                 LaunchedEffect(Unit) {
-                    DataStoreManager.getTasksFlow(applicationContext).collectLatest {
+                    DataStoreManager.getTasksFlow(applicationContext).collectLatest { saved ->
                         tasks.clear()
-                        tasks.addAll(it)
+                        tasks.addAll(saved)
                     }
                 }
 
                 ModalNavigationDrawer(
                     drawerState = drawerState,
-                    drawerContent = { /* ... drawer items ... */ }
+                    drawerContent = {
+                        ModalDrawerSheet {
+                            Spacer(Modifier.height(16.dp))
+                            ViewMode.values().forEach { mode ->
+                                NavigationDrawerItem(
+                                    label = { Text(mode.name.replace("_", " ").capitalize(Locale.getDefault())) },
+                                    selected = mode == viewMode,
+                                    onClick = {
+                                        viewMode = mode
+                                        scope.launch { drawerState.close() }
+                                    },
+                                    icon = {
+                                        Icon(
+                                            imageVector = Icons.Default.CalendarToday,
+                                            contentDescription = mode.name
+                                        )
+                                    },
+                                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                                )
+                            }
+                        }
+                    }
                 ) {
                     Scaffold(
                         topBar = {
                             CenterAlignedTopAppBar(
                                 navigationIcon = {
                                     IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                                        Icon(Icons.Default.Menu, contentDescription = "Menu")
+                                        Icon(Icons.Default.Menu, contentDescription = "Open drawer")
                                     }
                                 },
                                 title = {
@@ -79,7 +102,7 @@ class MainActivity : ComponentActivity() {
                         },
                         floatingActionButton = {
                             FloatingActionButton(onClick = { showAddDialog = true }) {
-                                Icon(Icons.Default.Add, contentDescription = null)
+                                Icon(Icons.Default.Add, contentDescription = "Add task")
                             }
                         }
                     ) { paddingValues ->
@@ -90,9 +113,10 @@ class MainActivity : ComponentActivity() {
                                     referenceDate = startDate,
                                     onPrev = { startDate = startDate.minusYears(1) },
                                     onNext = { startDate = startDate.plusYears(1) },
-                                    onMonthClick = { newDate ->
-                                        startDate = newDate
-                                        viewMode = ViewMode.MONTH
+                                    onMonthClick = { date -> startDate = date },
+                                    onTaskClick = { idx ->
+                                        editingTaskIndex = idx
+                                        showEditDialog = true
                                     }
                                 )
                                 ViewMode.YEAR -> YearCalendar(
@@ -100,9 +124,10 @@ class MainActivity : ComponentActivity() {
                                     referenceDate = startDate,
                                     onPrev = { startDate = startDate.minusYears(10) },
                                     onNext = { startDate = startDate.plusYears(10) },
-                                    onYearClick = { date ->
-                                        startDate = date
-                                        viewMode = ViewMode.MONTH
+                                    onYearClick = { date -> startDate = date; viewMode = ViewMode.MONTH },
+                                    onTaskClick = { idx ->
+                                        editingTaskIndex = idx
+                                        showEditDialog = true
                                     }
                                 )
                                 else -> WeekGanttChart(
@@ -111,31 +136,27 @@ class MainActivity : ComponentActivity() {
                                     viewMode = viewMode,
                                     onPrev = {
                                         startDate = when (viewMode) {
-                                            ViewMode.DAY        -> startDate.minusDays(1)
+                                            ViewMode.DAY -> startDate.minusDays(1)
                                             ViewMode.THREE_DAYS -> startDate.minusDays(3)
-                                            ViewMode.WEEK       -> startDate.minusWeeks(1)
-                                            else                -> startDate
+                                            ViewMode.WEEK -> startDate.minusWeeks(1)
+                                            else -> startDate
                                         }
                                     },
                                     onNext = {
                                         startDate = when (viewMode) {
-                                            ViewMode.DAY        -> startDate.plusDays(1)
+                                            ViewMode.DAY -> startDate.plusDays(1)
                                             ViewMode.THREE_DAYS -> startDate.plusDays(3)
-                                            ViewMode.WEEK       -> startDate.plusWeeks(1)
-                                            else                -> startDate
+                                            ViewMode.WEEK -> startDate.plusWeeks(1)
+                                            else -> startDate
                                         }
                                     },
-                                    onDateClick = { date ->
-                                        startDate = date
-                                        viewMode = ViewMode.DAY
-                                    },
-                                    onTaskClick = { index ->
-                                        editingTaskIndex = index
+                                    onDateClick = { date -> startDate = date; viewMode = ViewMode.DAY },
+                                    onTaskClick = { idx ->
+                                        editingTaskIndex = idx
                                         showEditDialog = true
                                     }
                                 )
                             }
-
                             if (showAddDialog) {
                                 AddTaskDialog(
                                     existingTasks = tasks,
@@ -147,7 +168,6 @@ class MainActivity : ComponentActivity() {
                                     onDismiss = { showAddDialog = false }
                                 )
                             }
-
                             if (showEditDialog && editingTaskIndex >= 0) {
                                 EditTaskDialog(
                                     task = tasks[editingTaskIndex],
@@ -155,6 +175,10 @@ class MainActivity : ComponentActivity() {
                                         tasks[editingTaskIndex] = updated
                                         scope.launch { DataStoreManager.saveTasks(applicationContext, tasks) }
                                         showEditDialog = false
+                                    },
+                                    onDelete = {
+                                        tasks.removeAt(editingTaskIndex)
+                                        scope.launch { DataStoreManager.saveTasks(applicationContext, tasks) }
                                     },
                                     onDismiss = { showEditDialog = false }
                                 )

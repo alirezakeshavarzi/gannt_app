@@ -3,7 +3,6 @@ package com.example.ganttapp
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -15,21 +14,18 @@ import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import java.time.LocalDate
 import java.time.Month
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
-import java.util.*
+import java.util.Locale
 
 @Composable
 fun MonthCalendar(
@@ -37,7 +33,8 @@ fun MonthCalendar(
     referenceDate: LocalDate,
     onPrev: () -> Unit,
     onNext: () -> Unit,
-    onMonthClick: (LocalDate) -> Unit = {}
+    onMonthClick: (LocalDate) -> Unit,
+    onTaskClick: (Int) -> Unit
 ) {
     val year = referenceDate.year
     val months = Month.values().toList()
@@ -50,27 +47,27 @@ fun MonthCalendar(
             .fillMaxSize()
             .padding(8.dp)
     ) {
-        // ——— Header سال ———
+        // Year header
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            IconButton(onClick = onPrev) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "سال قبل")
-            }
-            Text("$year", fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
-            IconButton(onClick = onNext) {
-                Icon(Icons.Default.ArrowForward, contentDescription = "سال بعد")
-            }
+            IconButton(onClick = onPrev) { Icon(Icons.Default.ArrowBack, contentDescription = "Prev year") }
+            Text(
+                text = year.toString(),
+                style = MaterialTheme.typography.titleMedium
+            )
+            IconButton(onClick = onNext) { Icon(Icons.Default.ArrowForward, contentDescription = "Next year") }
         }
+
         Spacer(Modifier.height(8.dp))
         Divider()
         Spacer(Modifier.height(8.dp))
 
-        // ——— Row نام تسک + هدر ماه‌ها ———
+        // Month headers
         Row(Modifier.fillMaxWidth()) {
-            Spacer(Modifier.width(80.dp)) // ستون ثابت نام تسک
+            Spacer(Modifier.width(80.dp))
             Row(
                 Modifier
                     .horizontalScroll(hScroll)
@@ -83,24 +80,20 @@ fun MonthCalendar(
                             .width(60.dp)
                             .fillMaxHeight()
                             .border(0.5.dp, Color.LightGray)
-                            .clickable {
-                                onMonthClick(LocalDate.of(year, idx + 1, 1))
-                            },
+                            .clickable { onMonthClick(LocalDate.of(year, idx + 1, 1)) },
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = month.getDisplayName(TextStyle.SHORT, Locale.getDefault()),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium
+                            style = MaterialTheme.typography.bodySmall
                         )
                     }
                 }
             }
         }
-
         Divider(Modifier.padding(vertical = 4.dp))
 
-        // ——— گانت‌چارت (اسکرول عمودی و افقی) ———
+        // Task rows
         Box(
             Modifier
                 .fillMaxSize()
@@ -111,41 +104,41 @@ fun MonthCalendar(
                     .fillMaxWidth()
                     .horizontalScroll(hScroll)
             ) {
-                tasks.forEach { task ->
+                tasks.forEachIndexed { index, task ->
                     val start = LocalDate.parse(task.start, formatter)
                     val end = LocalDate.parse(task.end, formatter)
+
                     Row(
                         Modifier
                             .fillMaxWidth()
-                            .height(50.dp),
+                            .height(50.dp)
+                            .clickable { onTaskClick(index) },
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // نام تسک
+                        // Label background updated: white fill and grey border
                         Box(
                             Modifier
                                 .width(80.dp)
-                                .padding(4.dp),
-                            contentAlignment = Alignment.CenterStart
+                                .padding(4.dp)
+                                .background(Color(0xFFFAFAFA), RoundedCornerShape(20.dp))
+                                .border(1.dp, Color(0xFFE0E0E0), RoundedCornerShape(20.dp)),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Text(task.name, fontSize = 14.sp)
+                            Text(task.name, style = MaterialTheme.typography.bodyMedium)
                         }
-                        // ستون‌های ماه
-                        months.forEachIndexed { idx, month ->
-                            val monthIndex = idx + 1
-                            val monthStart = LocalDate.of(year, monthIndex, 1)
-                            val monthEnd = monthStart.withDayOfMonth(
-                                month.length(year % 4 == 0)
-                            )
-                            val inRange = !(end < monthStart || start > monthEnd)
 
+                        // Bars
+                        months.forEachIndexed { idx, _ ->
+                            val monthStart = LocalDate.of(year, idx + 1, 1)
+                            val monthEnd = monthStart.withDayOfMonth(monthStart.lengthOfMonth())
+                            val inRange = !(end < monthStart || start > monthEnd)
                             Box(
                                 Modifier
                                     .width(60.dp)
                                     .fillMaxHeight()
                                     .padding(1.dp)
                                     .background(
-                                        if (inRange)
-                                            Color(android.graphics.Color.parseColor(task.color))
+                                        if (inRange) Color(android.graphics.Color.parseColor(task.color))
                                         else Color.Transparent,
                                         shape = RoundedCornerShape(4.dp)
                                     )
