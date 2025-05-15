@@ -55,7 +55,7 @@ fun YearCalendar(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             IconButton(onClick = onPrev) { Icon(Icons.Default.ArrowBack, contentDescription = "Prev") }
-            Text(text = "$startYear – ${'$'}{startYear + 9}", style = MaterialTheme.typography.titleMedium)
+            Text(text = "$startYear – ${startYear + 9}", style = MaterialTheme.typography.titleMedium)
             IconButton(onClick = onNext) { Icon(Icons.Default.ArrowForward, contentDescription = "Next") }
         }
         Spacer(Modifier.height(8.dp))
