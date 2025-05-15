@@ -4,16 +4,24 @@ import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import com.example.ganttapp.DataStoreManager
 import kotlinx.coroutines.flow.collectLatest
@@ -29,6 +37,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MaterialTheme {
+                // ۱) state های اصلی
                 val scope = rememberCoroutineScope()
                 val drawerState = rememberDrawerState(DrawerValue.Closed)
                 val monthFormatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault())
@@ -39,13 +48,15 @@ class MainActivity : ComponentActivity() {
                 var startDate by remember { mutableStateOf(LocalDate.now()) }
                 var viewMode by remember { mutableStateOf(ViewMode.WEEK) }
 
+                // ۲) بارگذاری تسک‌ها از DataStore
                 LaunchedEffect(Unit) {
-                    DataStoreManager.getTasksFlow(applicationContext).collectLatest { saved ->
+                    DataStoreManager.getTasksFlow(applicationContext).collectLatest {
                         tasks.clear()
-                        tasks.addAll(saved)
+                        tasks.addAll(it)
                     }
                 }
 
+                // ۳) Drawer سه‌حالته
                 ModalNavigationDrawer(
                     drawerState = drawerState,
                     drawerContent = {
@@ -53,30 +64,25 @@ class MainActivity : ComponentActivity() {
                             Spacer(Modifier.height(16.dp))
                             ViewMode.values().forEach { mode ->
                                 NavigationDrawerItem(
-                                    label = { Text(mode.name.replace("_", " ").capitalize(Locale.getDefault())) },
+                                    label = { Text(mode.name.replace("_"," ")) },
                                     selected = mode == viewMode,
                                     onClick = {
                                         viewMode = mode
                                         scope.launch { drawerState.close() }
                                     },
-                                    icon = {
-                                        Icon(
-                                            imageVector = Icons.Default.CalendarToday,
-                                            contentDescription = mode.name
-                                        )
-                                    },
-                                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                                    icon = { Icon(Icons.Default.CalendarToday, contentDescription = mode.name) }
                                 )
                             }
                         }
                     }
                 ) {
+                    // ۴) Scaffold اصلی با TopBar و FAB
                     Scaffold(
                         topBar = {
                             CenterAlignedTopAppBar(
                                 navigationIcon = {
                                     IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                                        Icon(Icons.Default.Menu, contentDescription = "Open drawer")
+                                        Icon(Icons.Default.Menu, contentDescription = "Menu")
                                     }
                                 },
                                 title = {
@@ -107,13 +113,15 @@ class MainActivity : ComponentActivity() {
                         }
                     ) { paddingValues ->
                         Box(Modifier.padding(paddingValues)) {
+
+                            // ۵) انتخاب ویو بر اساس viewMode
                             when (viewMode) {
                                 ViewMode.MONTH -> MonthCalendar(
                                     tasks = tasks,
                                     referenceDate = startDate,
                                     onPrev = { startDate = startDate.minusYears(1) },
                                     onNext = { startDate = startDate.plusYears(1) },
-                                    onMonthClick = { date -> startDate = date },
+                                    onMonthClick = { startDate = it },
                                     onTaskClick = { idx ->
                                         editingTaskIndex = idx
                                         showEditDialog = true
@@ -124,7 +132,10 @@ class MainActivity : ComponentActivity() {
                                     referenceDate = startDate,
                                     onPrev = { startDate = startDate.minusYears(10) },
                                     onNext = { startDate = startDate.plusYears(10) },
-                                    onYearClick = { date -> startDate = date; viewMode = ViewMode.MONTH },
+                                    onYearClick = {
+                                        startDate = it
+                                        viewMode = ViewMode.MONTH
+                                    },
                                     onTaskClick = { idx ->
                                         editingTaskIndex = idx
                                         showEditDialog = true
@@ -136,27 +147,32 @@ class MainActivity : ComponentActivity() {
                                     viewMode = viewMode,
                                     onPrev = {
                                         startDate = when (viewMode) {
-                                            ViewMode.DAY -> startDate.minusDays(1)
+                                            ViewMode.DAY        -> startDate.minusDays(1)
                                             ViewMode.THREE_DAYS -> startDate.minusDays(3)
-                                            ViewMode.WEEK -> startDate.minusWeeks(1)
-                                            else -> startDate
+                                            ViewMode.WEEK       -> startDate.minusWeeks(1)
+                                            else                -> startDate
                                         }
                                     },
                                     onNext = {
                                         startDate = when (viewMode) {
-                                            ViewMode.DAY -> startDate.plusDays(1)
+                                            ViewMode.DAY        -> startDate.plusDays(1)
                                             ViewMode.THREE_DAYS -> startDate.plusDays(3)
-                                            ViewMode.WEEK -> startDate.plusWeeks(1)
-                                            else -> startDate
+                                            ViewMode.WEEK       -> startDate.plusWeeks(1)
+                                            else                -> startDate
                                         }
                                     },
-                                    onDateClick = { date -> startDate = date; viewMode = ViewMode.DAY },
+                                    onDateClick = { date ->
+                                        startDate = date
+                                        viewMode = ViewMode.DAY
+                                    },
                                     onTaskClick = { idx ->
                                         editingTaskIndex = idx
                                         showEditDialog = true
                                     }
                                 )
                             }
+
+                            // ۶) دیالوگ‌های افزودن/ویرایش
                             if (showAddDialog) {
                                 AddTaskDialog(
                                     existingTasks = tasks,
