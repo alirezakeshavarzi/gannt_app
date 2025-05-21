@@ -47,7 +47,7 @@ fun MonthCalendar(
             .fillMaxSize()
             .padding(8.dp)
     ) {
-        // Year header
+
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -65,7 +65,7 @@ fun MonthCalendar(
         Divider()
         Spacer(Modifier.height(8.dp))
 
-        // Month headers
+
         Row(Modifier.fillMaxWidth()) {
             Spacer(Modifier.width(80.dp))
             Row(
@@ -93,7 +93,7 @@ fun MonthCalendar(
         }
         Divider(Modifier.padding(vertical = 4.dp))
 
-        // Task rows
+
         Box(
             Modifier
                 .fillMaxSize()
@@ -127,7 +127,7 @@ fun MonthCalendar(
                             Text(task.name, style = MaterialTheme.typography.bodyMedium)
                         }
 
-                        // Bars
+
                         months.forEachIndexed { idx, _ ->
                             val monthStart = LocalDate.of(year, idx + 1, 1)
                             val monthEnd = monthStart.withDayOfMonth(monthStart.lengthOfMonth())

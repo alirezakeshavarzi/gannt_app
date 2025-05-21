@@ -43,7 +43,7 @@ fun WeekGanttChart(
             .fillMaxSize()
             .pointerInput(Unit) { detectHorizontalDragGestures { _, drag -> if (drag > 100) onPrev() else if (drag < -100) onNext() } }
     ) {
-        // Header row
+
         Row(Modifier.fillMaxWidth()) {
             Spacer(Modifier.width(80.dp))
             days.forEach { day ->
@@ -52,7 +52,7 @@ fun WeekGanttChart(
         }
         Divider(Modifier.padding(vertical = 4.dp))
 
-        // Task rows
+
         Column(Modifier.verticalScroll(rememberScrollState())) {
             tasks.forEachIndexed { index, task ->
                 val s = LocalDate.parse(task.start, formatter)

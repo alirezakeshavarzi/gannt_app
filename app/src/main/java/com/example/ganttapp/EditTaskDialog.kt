@@ -1,4 +1,3 @@
-// EditTaskDialog.kt
 package com.example.ganttapp
 
 import android.app.DatePickerDialog
@@ -65,22 +64,24 @@ fun EditTaskDialog(
                                 onClick = {
                                     DatePickerDialog(
                                         context,
-                                        { _, y, m, d ->
-                                            startDate = LocalDate.of(y, m + 1, d)
-                                            if (endDate.isBefore(startDate))
-                                                endDate = startDate
+                                        { _, pickedYear, pickedMonth, pickedDay ->
+                                            startDate = LocalDate.of(
+                                                pickedYear,
+                                                pickedMonth + 1,
+                                                pickedDay
+                                            )
                                         },
                                         startDate.year,
                                         startDate.monthValue - 1,
                                         startDate.dayOfMonth
-                                    ).apply { datePicker.minDate = 0 }
-                                        .show()
+                                    ).show()
                                 },
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text(startDate.format(formatter))
                             }
                         }
+
                         Column(modifier = Modifier.weight(1f)) {
                             Text("تاریخ پایان", style = MaterialTheme.typography.bodyMedium)
                             Spacer(Modifier.height(4.dp))
@@ -88,16 +89,17 @@ fun EditTaskDialog(
                                 onClick = {
                                     DatePickerDialog(
                                         context,
-                                        { _, y, m, d ->
-                                            endDate = LocalDate.of(y, m + 1, d)
-                                            if (endDate.isBefore(startDate))
-                                                startDate = endDate
+                                        { _, pickedYear, pickedMonth, pickedDay ->
+                                            endDate = LocalDate.of(
+                                                pickedYear,
+                                                pickedMonth + 1,
+                                                pickedDay
+                                            )
                                         },
                                         endDate.year,
                                         endDate.monthValue - 1,
                                         endDate.dayOfMonth
-                                    ).apply { datePicker.minDate = 0 }
-                                        .show()
+                                    ).show()
                                 },
                                 modifier = Modifier.fillMaxWidth()
                             ) {
@@ -105,6 +107,7 @@ fun EditTaskDialog(
                             }
                         }
                     }
+
                     Spacer(Modifier.height(16.dp))
                     Text("انتخاب رنگ:")
                     FlowRow(

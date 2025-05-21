@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@drawable/ic_launcher_background" />
-    <foreground android:drawable="@drawable/ic_launcher_foreground" />
-    <monochrome android:drawable="@drawable/ic_launcher_foreground" />
+
+    <!-- بک‌گراند آیکون (مثلاً رنگ سیاه) -->
+    <background android:drawable="@color/black" />
+
+    <!-- فرگراند اصلی: فرض می‌کنیم فایل WebP شما با نام is_launcher.webp است -->
+    <foreground android:drawable="@mipmap/is_launcher" />
+
+    <!-- حالت تک‌رنگ (monochrome)؛ این گزینه برای برخی لانچرها یا
+         استایل‌های خاص (مثلاً نوتیفیکیشن) استفاده می‌شود. -->
+    <monochrome android:drawable="@mipmap/is_launcher" />
+
 </adaptive-icon>

@@ -12,11 +12,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.input.ImeAction
-//import androidx.compose.ui.text.input.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
@@ -53,7 +51,6 @@ fun AddTaskDialog(
         text = {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 Column(Modifier.fillMaxWidth()) {
-                    // ورودی عنوان تسک با پشتیبانی RTL و کیبورد فارسی
                     OutlinedTextField(
                         value = name,
                         onValueChange = { name = it },
@@ -72,7 +69,6 @@ fun AddTaskDialog(
 
                     Spacer(Modifier.height(12.dp))
 
-                    // انتخاب تاریخ شروع و پایان
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text("تاریخ شروع", style = MaterialTheme.typography.bodyMedium)
@@ -81,24 +77,24 @@ fun AddTaskDialog(
                                 onClick = {
                                     DatePickerDialog(
                                         context,
-                                        { _, y, m, d ->
-                                            val newDate = LocalDate.of(y, m + 1, d)
-                                            startDate = newDate
-                                            if (endDate.isBefore(newDate)) {
-                                                endDate = newDate.plusDays(1)
-                                            }
+                                        { _, pickedYear, pickedMonth, pickedDay ->
+                                            startDate = LocalDate.of(
+                                                pickedYear,
+                                                pickedMonth + 1,
+                                                pickedDay
+                                            )
                                         },
                                         startDate.year,
                                         startDate.monthValue - 1,
                                         startDate.dayOfMonth
-                                    ).apply { datePicker.minDate = 0 }
-                                        .show()
+                                    ).show()
                                 },
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text(startDate.format(formatter))
                             }
                         }
+
                         Column(modifier = Modifier.weight(1f)) {
                             Text("تاریخ پایان", style = MaterialTheme.typography.bodyMedium)
                             Spacer(Modifier.height(4.dp))
@@ -106,22 +102,17 @@ fun AddTaskDialog(
                                 onClick = {
                                     DatePickerDialog(
                                         context,
-                                        { _, y, m, d ->
-                                            val newDate = LocalDate.of(y, m + 1, d)
-                                            endDate = newDate
-                                            if (endDate.isBefore(startDate)) {
-                                                startDate = newDate.minusDays(1)
-                                            }
+                                        { _, pickedYear, pickedMonth, pickedDay ->
+                                            endDate = LocalDate.of(
+                                                pickedYear,
+                                                pickedMonth + 1,
+                                                pickedDay
+                                            )
                                         },
                                         endDate.year,
                                         endDate.monthValue - 1,
                                         endDate.dayOfMonth
-                                    ).apply {
-                                        datePicker.minDate = startDate
-                                            .atStartOfDay(java.time.ZoneId.systemDefault())
-                                            .toInstant().toEpochMilli()
-                                    }
-                                        .show()
+                                    ).show()
                                 },
                                 modifier = Modifier.fillMaxWidth()
                             ) {

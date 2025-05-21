@@ -40,7 +40,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MaterialTheme {
-                // ۱) اصلی state ها
+
                 val scope = rememberCoroutineScope()
                 val drawerState = rememberDrawerState(DrawerValue.Closed)
                 val monthFormatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault())
@@ -51,11 +51,11 @@ class MainActivity : ComponentActivity() {
                 var startDate by remember { mutableStateOf(LocalDate.now()) }
                 var viewMode by remember { mutableStateOf(ViewMode.WEEK) }
 
-                // state های جست‌وجو
+
                 var showSearchDialog by remember { mutableStateOf(false) }
                 var searchQuery by remember { mutableStateOf("") }
 
-                // بارگذاری تسک‌ها
+
                 LaunchedEffect(Unit) {
                     DataStoreManager.getTasksFlow(applicationContext).collectLatest {
                         tasks.clear()
@@ -63,7 +63,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                // Drawer سه‌حالته
+
                 ModalNavigationDrawer(
                     drawerState = drawerState,
                     drawerContent = {
@@ -83,7 +83,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 ) {
-                    // Scaffold اصلی
+
                     Scaffold(
                         topBar = {
                             CenterAlignedTopAppBar(
@@ -104,7 +104,7 @@ class MainActivity : ComponentActivity() {
                                     }
                                 },
                                 actions = {
-                                    // Today
+
                                     IconButton(onClick = {
                                         startDate = LocalDate.now()
                                         viewMode = ViewMode.WEEK
@@ -126,7 +126,7 @@ class MainActivity : ComponentActivity() {
                     ) { paddingValues ->
                         Box(Modifier.padding(paddingValues)) {
 
-                            // محتوای اصلی بر اساس viewMode
+
                             when (viewMode) {
                                 ViewMode.MONTH -> MonthCalendar(
                                     tasks = tasks,
@@ -184,7 +184,7 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-                            // دیالوگ افزودن
+
                             if (showAddDialog) {
                                 AddTaskDialog(
                                     existingTasks = tasks,
@@ -213,7 +213,7 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-                            // دیالوگ جست‌وجو
+
                             if (showSearchDialog) {
                                 SearchTaskDialog(
                                     query = searchQuery,
@@ -247,7 +247,7 @@ fun SearchTaskDialog(
     onSelect: (Int) -> Unit,
     onDismiss: () -> Unit
 ) {
-    // فیلتر بر اساس زیررشته
+
     val results = remember(query, tasks) {
         if (query.isBlank()) emptyList()
         else tasks.mapIndexed { index, task -> index to task }
