@@ -4,30 +4,40 @@ import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-//import androidx.compose.material.Divider
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.Divider
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.platform.LocalLayoutDirection
 import com.example.ganttapp.DataStoreManager
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -42,12 +52,13 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MaterialTheme {
+
                 val scope = rememberCoroutineScope()
                 val drawerState = rememberDrawerState(DrawerValue.Closed)
                 val monthFormatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault())
                 val tasks = remember { mutableStateListOf<Task>() }
 
-                // ===== حالت‌های اصلی =====
+                // حالت‌های اصلی
                 var showAddDialog by remember { mutableStateOf(false) }
                 var showEditDialog by remember { mutableStateOf(false) }
                 var editingTaskIndex by remember { mutableStateOf(-1) }
@@ -57,7 +68,7 @@ class MainActivity : ComponentActivity() {
                 var showSearchDialog by remember { mutableStateOf(false) }
                 var searchQuery by remember { mutableStateOf("") }
 
-                // ===== حالت جدید برای دیالوگ «درباره ما» =====
+                // حالت جدید برای دیالوگ «درباره ما»
                 var showAboutDialog by remember { mutableStateOf(false) }
 
                 LaunchedEffect(Unit) {
@@ -88,7 +99,7 @@ class MainActivity : ComponentActivity() {
 
                             Divider(modifier = Modifier.padding(vertical = 8.dp))
 
-                            // ===== آیتم «درباره ما» =====
+                            // آیتم «درباره ما»
                             NavigationDrawerItem(
                                 label = { Text("درباره ما") },
                                 selected = false,
@@ -247,7 +258,7 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-                            // ===== دیالوگ «درباره ما» =====
+                            // دیالوگ «درباره ما»
                             if (showAboutDialog) {
                                 AlertDialog(
                                     onDismissRequest = { showAboutDialog = false },
@@ -256,17 +267,81 @@ class MainActivity : ComponentActivity() {
                                             Text("باشه")
                                         }
                                     },
-                                    title = { Text("درباره ما") },
                                     text = {
-                                        Column(Modifier.padding(4.dp)) {
-                                            Text("شرکت ما با هدف توسعه‌ی راهکارهای نرم‌افزاری در حوزه‌ی مدیریت پروژه تأسیس شده است.")
-                                            Spacer(Modifier.height(4.dp))
-                                            Text("تیم توسعه این اپ شامل:")
-                                            Spacer(Modifier.height(2.dp))
-                                            Text("• علی رضایی (توسعه‌دهنده ارشد)")
-                                            Text("• سارا محمدی (طراح رابط کاربری)")
-                                            Text("• رضا حسینی (معماری نرم‌افزار)")
-                                            // در صورت نیاز اینجا متن بیشتری اضافه کنید
+                                        // ست کردن جهت نوشتار به راست-به-چپ
+                                        CompositionLocalProvider(
+                                            LocalLayoutDirection provides LayoutDirection.Rtl
+                                        ) {
+                                            Column(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(4.dp)
+                                            ) {
+                                                // بخش «درباره ما»
+                                                Text(
+                                                    text = "درباره ما",
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                                Spacer(modifier = Modifier.height(2.dp))
+                                                Divider(thickness = 1.dp, modifier = Modifier.padding(vertical = 4.dp))
+                                                Text(
+                                                    text = "این اپلیکیشن به‌عنوان پروژه‌ی درسی درس «اصول طراحی نرم‌افزار» " +
+                                                            "در دانشگاه زنجان، دانشکده‌ی علوم کامپیوتر و ریاضی " +
+                                                            "طراحی و توسعه یافته است. هدف ما ارائه‌ی یک ابزار ساده و کارآمد " +
+                                                            "برای برنامه‌ریزی و مدیریت وظایف به صورت نمودار گانت است تا " +
+                                                            "دانشجویان و متخصصان بتوانند به راحتی مراحل و زمان‌بندی پروژه‌های " +
+                                                            "خود را ترسیم و پیگیری کنند."
+                                                )
+
+                                                Spacer(modifier = Modifier.height(8.dp))
+
+                                                // بخش «استاد راهنما»
+                                                Text(
+                                                    text = "استاد راهنما",
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                                Spacer(modifier = Modifier.height(2.dp))
+                                                Divider(thickness = 1.dp, modifier = Modifier.padding(vertical = 4.dp))
+                                                Text(
+                                                    text = "دکتر احمد علی‌یاری"
+                                                )
+
+                                                Spacer(modifier = Modifier.height(8.dp))
+
+                                                // بخش «تیم توسعه»
+                                                Text(
+                                                    text = "تیم توسعه",
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                                Spacer(modifier = Modifier.height(2.dp))
+                                                Divider(thickness = 1.dp, modifier = Modifier.padding(vertical = 4.dp))
+                                                Text(text = "• نیما قدیمی")
+                                                Text(text = "• مانی مهانفر")
+                                                Text(text = "• علیرضا کشاورزی")
+
+                                                Spacer(modifier = Modifier.height(8.dp))
+
+                                                // بخش «سپاس‌گزاری»
+
+                                                Spacer(modifier = Modifier.height(2.dp))
+                                                Divider(thickness = 1.dp, modifier = Modifier.padding(vertical = 4.dp))
+                                                Text(
+                                                    text = "از همه‌ی عزیزانی که در ارزیابی، تست و بهبود این اپلیکیشن " +
+                                                            "ما را همراهی کردند، صمیمانه سپاس‌گزاریم."
+                                                )
+
+                                                Spacer(modifier = Modifier.height(8.dp))
+
+                                                // بخش «مشخصات نسخه»
+                                                Text(
+                                                    text = "مشخصات نسخه",
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                                Spacer(modifier = Modifier.height(2.dp))
+                                                Divider(thickness = 1.dp, modifier = Modifier.padding(vertical = 4.dp))
+                                                Text(text = "نسخه‌ی فعلی: 1.0.0")
+                                                Text(text = "تاریخ انتشار: خرداد ۱۴۰۴")
+                                            }
                                         }
                                     }
                                 )
@@ -279,6 +354,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+// بخش SearchTaskDialog بدون تغییر
 @Composable
 fun SearchTaskDialog(
     query: String,
