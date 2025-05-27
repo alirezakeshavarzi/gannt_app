@@ -12,11 +12,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+//import androidx.compose.material.Divider
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -40,21 +42,23 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MaterialTheme {
-
                 val scope = rememberCoroutineScope()
                 val drawerState = rememberDrawerState(DrawerValue.Closed)
                 val monthFormatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault())
                 val tasks = remember { mutableStateListOf<Task>() }
+
+                // ===== حالت‌های اصلی =====
                 var showAddDialog by remember { mutableStateOf(false) }
                 var showEditDialog by remember { mutableStateOf(false) }
                 var editingTaskIndex by remember { mutableStateOf(-1) }
                 var startDate by remember { mutableStateOf(LocalDate.now()) }
                 var viewMode by remember { mutableStateOf(ViewMode.WEEK) }
 
-
                 var showSearchDialog by remember { mutableStateOf(false) }
                 var searchQuery by remember { mutableStateOf("") }
 
+                // ===== حالت جدید برای دیالوگ «درباره ما» =====
+                var showAboutDialog by remember { mutableStateOf(false) }
 
                 LaunchedEffect(Unit) {
                     DataStoreManager.getTasksFlow(applicationContext).collectLatest {
@@ -63,15 +67,16 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-
                 ModalNavigationDrawer(
                     drawerState = drawerState,
                     drawerContent = {
                         ModalDrawerSheet {
                             Spacer(Modifier.height(16.dp))
+
+                            // لیست ViewModeها
                             ViewMode.values().forEach { mode ->
                                 NavigationDrawerItem(
-                                    label = { Text(mode.name.replace("_"," ")) },
+                                    label = { Text(mode.name.replace("_", " ")) },
                                     selected = mode == viewMode,
                                     onClick = {
                                         viewMode = mode
@@ -80,10 +85,22 @@ class MainActivity : ComponentActivity() {
                                     icon = { Icon(Icons.Default.CalendarToday, contentDescription = mode.name) }
                                 )
                             }
+
+                            Divider(modifier = Modifier.padding(vertical = 8.dp))
+
+                            // ===== آیتم «درباره ما» =====
+                            NavigationDrawerItem(
+                                label = { Text("درباره ما") },
+                                selected = false,
+                                onClick = {
+                                    showAboutDialog = true
+                                    scope.launch { drawerState.close() }
+                                },
+                                icon = { Icon(Icons.Default.Info, contentDescription = "About Us") }
+                            )
                         }
                     }
                 ) {
-
                     Scaffold(
                         topBar = {
                             CenterAlignedTopAppBar(
@@ -104,7 +121,6 @@ class MainActivity : ComponentActivity() {
                                     }
                                 },
                                 actions = {
-
                                     IconButton(onClick = {
                                         startDate = LocalDate.now()
                                         viewMode = ViewMode.WEEK
@@ -125,7 +141,6 @@ class MainActivity : ComponentActivity() {
                         }
                     ) { paddingValues ->
                         Box(Modifier.padding(paddingValues)) {
-
 
                             when (viewMode) {
                                 ViewMode.MONTH -> MonthCalendar(
@@ -184,7 +199,6 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-
                             if (showAddDialog) {
                                 AddTaskDialog(
                                     existingTasks = tasks,
@@ -196,6 +210,7 @@ class MainActivity : ComponentActivity() {
                                     onDismiss = { showAddDialog = false }
                                 )
                             }
+
                             // دیالوگ ویرایش
                             if (showEditDialog && editingTaskIndex >= 0) {
                                 EditTaskDialog(
@@ -208,11 +223,11 @@ class MainActivity : ComponentActivity() {
                                     onDelete = {
                                         tasks.removeAt(editingTaskIndex)
                                         scope.launch { DataStoreManager.saveTasks(applicationContext, tasks) }
+                                        showEditDialog = false
                                     },
                                     onDismiss = { showEditDialog = false }
                                 )
                             }
-
 
                             if (showSearchDialog) {
                                 SearchTaskDialog(
@@ -228,6 +243,31 @@ class MainActivity : ComponentActivity() {
                                     onDismiss = {
                                         showSearchDialog = false
                                         searchQuery = ""
+                                    }
+                                )
+                            }
+
+                            // ===== دیالوگ «درباره ما» =====
+                            if (showAboutDialog) {
+                                AlertDialog(
+                                    onDismissRequest = { showAboutDialog = false },
+                                    confirmButton = {
+                                        TextButton(onClick = { showAboutDialog = false }) {
+                                            Text("باشه")
+                                        }
+                                    },
+                                    title = { Text("درباره ما") },
+                                    text = {
+                                        Column(Modifier.padding(4.dp)) {
+                                            Text("شرکت ما با هدف توسعه‌ی راهکارهای نرم‌افزاری در حوزه‌ی مدیریت پروژه تأسیس شده است.")
+                                            Spacer(Modifier.height(4.dp))
+                                            Text("تیم توسعه این اپ شامل:")
+                                            Spacer(Modifier.height(2.dp))
+                                            Text("• علی رضایی (توسعه‌دهنده ارشد)")
+                                            Text("• سارا محمدی (طراح رابط کاربری)")
+                                            Text("• رضا حسینی (معماری نرم‌افزار)")
+                                            // در صورت نیاز اینجا متن بیشتری اضافه کنید
+                                        }
                                     }
                                 )
                             }
