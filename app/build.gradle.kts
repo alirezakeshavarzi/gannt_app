@@ -11,8 +11,8 @@ android {
         applicationId = "com.example.ganttapp"
         minSdk = 24
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -60,15 +60,15 @@ android {
 }
 
 dependencies {
+
+    implementation ("com.itextpdf:itext7-core:7.2.5")
     implementation("androidx.datastore:datastore-preferences:1.1.6")
     implementation(libs.androidx.datastore.preferences.core.android)
-    // 👉 Pull in the desugaring library directly
+    
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.3")
 
-    // JSON parsing (if still needed)
     implementation("com.google.code.gson:gson:2.10.1")
 
-    // AnyChart (if you decide to mix in the Android‑View‑based chart)
     implementation("com.github.AnyChart:AnyChart-Android:1.1.2")
 
     // Compose + Material3
