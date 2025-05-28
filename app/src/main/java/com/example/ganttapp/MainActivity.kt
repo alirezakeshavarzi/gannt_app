@@ -68,7 +68,7 @@ import java.util.Locale
 @SuppressLint("CoroutineCreationDuringComposition", "UnusedMaterialScaffoldPaddingParameter")
 class MainActivity : ComponentActivity() {
 
-    // Launcher for WRITE_EXTERNAL_STORAGE permission (needed on API < 29)
+
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
             if (!isGranted) {
@@ -84,7 +84,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // اگر SDK < 29 است، مجوز WRITE_EXTERNAL_STORAGE را درخواست کن
+
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
             requestPermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
         }
@@ -96,10 +96,10 @@ class MainActivity : ComponentActivity() {
                 val monthFormatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault())
                 val tasks = remember { mutableStateListOf<Task>() }
 
-                // Context را یک بار بگیر و به Activity تبدیل کن
+
                 val activity = LocalContext.current as Activity
 
-                // حالت‌های اصلی
+
                 var showAddDialog by remember { mutableStateOf(false) }
                 var showEditDialog by remember { mutableStateOf(false) }
                 var editingTaskIndex by remember { mutableStateOf(-1) }
@@ -109,11 +109,11 @@ class MainActivity : ComponentActivity() {
                 var showSearchDialog by remember { mutableStateOf(false) }
                 var searchQuery by remember { mutableStateOf("") }
 
-                // حالت برای ذخیره PDF
+
                 var showSaveDialog by remember { mutableStateOf(false) }
                 var saveFileName by remember { mutableStateOf("gantt_report.pdf") }
 
-                // حالت برای «درباره ما»
+
                 var showAboutDialog by remember { mutableStateOf(false) }
 
                 LaunchedEffect(Unit) {
@@ -129,7 +129,7 @@ class MainActivity : ComponentActivity() {
                         ModalDrawerSheet {
                             Spacer(Modifier.height(16.dp))
 
-                            // لیست ViewModeها
+
                             ViewMode.values().forEach { mode ->
                                 NavigationDrawerItem(
                                     label = { Text(mode.name.replace("_", " ")) },
@@ -144,7 +144,7 @@ class MainActivity : ComponentActivity() {
 
                             Divider(modifier = Modifier.padding(vertical = 8.dp))
 
-                            // آیتم «درباره ما»
+
                             NavigationDrawerItem(
                                 label = { Text("درباره ما") },
                                 selected = false,
@@ -177,7 +177,7 @@ class MainActivity : ComponentActivity() {
                                     }
                                 },
                                 actions = {
-                                    // آیکون دانلود PDF
+
                                     IconButton(onClick = { showSaveDialog = true }) {
                                         Icon(Icons.Default.FileDownload, contentDescription = "Save PDF")
                                     }
@@ -257,7 +257,7 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-                            // دیالوگ اضافه کردن تسک
+
                             if (showAddDialog) {
                                 AddTaskDialog(
                                     existingTasks = tasks,
@@ -270,7 +270,7 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-                            // دیالوگ ویرایش تسک
+
                             if (showEditDialog && editingTaskIndex >= 0) {
                                 EditTaskDialog(
                                     task = tasks[editingTaskIndex],
@@ -288,7 +288,7 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-                            // دیالوگ جست‌وجو
+
                             if (showSearchDialog) {
                                 SearchTaskDialog(
                                     query = searchQuery,
@@ -307,7 +307,7 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-                            // دیالوگ ذخیره PDF
+
                             if (showSaveDialog) {
                                 AlertDialog(
                                     onDismissRequest = { showSaveDialog = false },
@@ -347,7 +347,7 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-                            // دیالوگ «درباره ما»
+
                             if (showAboutDialog) {
                                 AlertDialog(
                                     onDismissRequest = { showAboutDialog = false },
@@ -433,17 +433,9 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    /**
-     * تابعی برای تولید PDF که شامل:
-     * 1. سربرگ گزارش با تاریخ تولید (به فارسی)
-     * 2. جدول وظایف (ردیف، نام کار، تاریخ شروع، تاریخ پایان، مدت زمان)
-     * 3. متن "Gantt Chart"
-     * 4. نمودار گانت (گرفته‌شده با PixelCopy یا رسم مستقیم در API<26)
-     *
-     * مسیر ذخیره: /sdcard/Android/data/com.example.ganttapp/files/Documents/<fileName>
-     */
+
     private fun saveReportAsPdf(activity: Activity, tasks: List<Task>, inputFileName: String) {
-        // اطمینان از پسوند .pdf
+
         var fileName = inputFileName.trim()
         if (!fileName.lowercase(Locale.getDefault()).endsWith(".pdf")) {
             fileName += ".pdf"
@@ -452,7 +444,7 @@ class MainActivity : ComponentActivity() {
         val window = activity.window
         val view = window.decorView
 
-        // صبر کن تا View اندازه‌اش مشخص شود
+
         view.post {
             val width = view.width
             val height = view.height
@@ -461,25 +453,25 @@ class MainActivity : ComponentActivity() {
                 return@post
             }
 
-            // Bitmap خالی برای کپی محتوا
+
             val chartBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                // برای API 26 به بالا از PixelCopy استفاده می‌کنیم
+
                 val location = IntArray(2)
                 view.getLocationInWindow(location)
                 val rect = Rect(location[0], location[1], location[0] + width, location[1] + height)
 
                 PixelCopy.request(window, rect, chartBitmap, { copyResult ->
                     if (copyResult == PixelCopy.SUCCESS) {
-                        // پس از گرفتن نمودار، PDF را تولید کن
+
                         createPdfDocument(activity, tasks, chartBitmap, fileName)
                     } else {
                         Toast.makeText(this, "خطا در گرفتن نمودار ($copyResult)", Toast.LENGTH_LONG).show()
                     }
                 }, Handler(Looper.getMainLooper()))
             } else {
-                // برای API <26، مستقیماً View را روی Canvas می‌کشیم
+
                 val canvas = Canvas(chartBitmap)
                 view.draw(canvas)
                 createPdfDocument(activity, tasks, chartBitmap, fileName)
@@ -487,28 +479,19 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    /**
-     * ایجاد یک PdfDocument بر اساس:
-     * - لیست تسک‌ها
-     * - Bitmap نمودار
-     * - نام فایل
-     *
-     * سپس فایل را در:
-     * /sdcard/Android/data/com.example.ganttapp/files/Documents/
-     * ذخیره می‌کند.
-     */
+
     private fun createPdfDocument(
         activity: Activity,
         tasks: List<Task>,
         chartBitmap: Bitmap,
         fileName: String
     ) {
-        // تبدیل تاریخ تولید گزارش به فرمت فارسی (Jalali فرض شده نیست؛ فقط جایگزینی ارقام)
+
         val today = LocalDate.now()
         val formattedDate = today.format(DateTimeFormatter.ofPattern("yyyy/MM/dd"))
         val persianDate = convertLatinDigitsToPersian(formattedDate)
 
-        // تنظیمات متن و جدول
+
         val paint = Paint().apply {
             isAntiAlias = true
             textSize = 32f
@@ -520,18 +503,18 @@ class MainActivity : ComponentActivity() {
             textAlign = Paint.Align.LEFT
         }
 
-        // محاسبه ارتفاع‌های مورد نیاز
-        val headerHeight = 180          // فضای مورد نیاز برای سربرگ (متون و خط تیره)
-        val rowHeight = 60              // ارتفاع هر سطر جدول
+
+        val headerHeight = 180
+        val rowHeight = 60
         val tableHeaderHeight = rowHeight
         val tableHeight = tableHeaderHeight + tasks.size * rowHeight
-        val dividerHeight = 60          // فاصله قبل از متن "Gantt Chart"
-        val ganttLabelHeight = 40       // ارتفاع متن "Gantt Chart"
-        val bottomMargin = 40           // فاصله نهایی
+        val dividerHeight = 60
+        val ganttLabelHeight = 40
+        val bottomMargin = 40
         val pdfWidth = chartBitmap.width
         val pdfHeight = headerHeight + tableHeight + dividerHeight + ganttLabelHeight + chartBitmap.height + bottomMargin
 
-        // ساخت PdfDocument
+
         val document = PdfDocument()
         val pageInfo = PdfDocument.PageInfo.Builder(pdfWidth, pdfHeight, 1).create()
         val page = document.startPage(pageInfo)
@@ -539,7 +522,7 @@ class MainActivity : ComponentActivity() {
 
         val centerX = (pdfWidth / 2).toFloat()
 
-        // رسم سربرگ
+
         canvas.drawText(
             "───────────────────────────────────────────────",
             centerX,
@@ -565,7 +548,7 @@ class MainActivity : ComponentActivity() {
             paint
         )
 
-        // رسم جدول (عنوان ستون‌ها)
+
         val startTableY = headerHeight.toFloat()
         val col1X = 20f
         val col2X = 120f
@@ -580,16 +563,16 @@ class MainActivity : ComponentActivity() {
         canvas.drawText("تاریخ پایان", col4X, startTableY, smallPaint)
         canvas.drawText("مدت زمان", col5X, startTableY, smallPaint)
 
-        // رسم سطرهای داده
+
         var currentY = startTableY + rowHeight
         smallPaint.textSize = 24f
         tasks.forEachIndexed { index, task ->
-            // ردیف فارسی
+
             val rowNumPersian = convertLatinDigitsToPersian((index + 1).toString())
-            // تبدیل تاریخ کار به yyyy/MM/dd و سپس جایگزینی ارقام
+
             val startPersian = convertLatinDigitsToPersian(task.startDate().format(DateTimeFormatter.ofPattern("yyyy/MM/dd")))
             val endPersian = convertLatinDigitsToPersian(task.endDate().format(DateTimeFormatter.ofPattern("yyyy/MM/dd")))
-            // محاسبه فاصله روزها و تبدیل به فارسی
+
             val days = ChronoUnit.DAYS.between(task.startDate(), task.endDate()).toInt()
             val durationPersian = "${convertLatinDigitsToPersian(days.toString())} روز"
 
@@ -602,7 +585,7 @@ class MainActivity : ComponentActivity() {
             currentY += rowHeight
         }
 
-        // رسم خط جداکننده قبل از متن "Gantt Chart"
+
         paint.textAlign = Paint.Align.CENTER
         paint.textSize = 32f
         canvas.drawText(
@@ -613,17 +596,17 @@ class MainActivity : ComponentActivity() {
         )
         currentY += dividerHeight
 
-        // رسم متن "Gantt Chart"
+
         canvas.drawText("Gantt Chart", centerX, currentY.toFloat(), paint)
         currentY += ganttLabelHeight
 
-        // رسم نمودار گانت (Bitmap)
+
         canvas.drawBitmap(chartBitmap, 0f, currentY.toFloat(), null)
 
-        // پایان صفحه و ذخیره سند
+
         document.finishPage(page)
 
-        // ذخیره در پوشه‌ی Documents داخل فضای برنامه
+
         val docsDir = activity.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
         if (docsDir == null) {
             Toast.makeText(this, "امکان دسترسی به Documents برنامه وجود ندارد.", Toast.LENGTH_LONG).show()
@@ -650,9 +633,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    /**
-     * جایگزینی ارقام لاتین با ارقام فارسی برای نمایش در متن فارسی
-     */
+
     private fun convertLatinDigitsToPersian(input: String): String {
         val map = mapOf(
             '0' to '۰', '1' to '۱', '2' to '۲', '3' to '۳', '4' to '۴',
@@ -666,7 +647,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-// بخش SearchTaskDialog بدون تغییر
+
 @Composable
 fun SearchTaskDialog(
     query: String,
