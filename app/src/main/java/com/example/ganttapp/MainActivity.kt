@@ -495,7 +495,6 @@ class MainActivity : ComponentActivity() {
                                                 )
                                                 Spacer(modifier = Modifier.height(2.dp))
                                                 Divider(thickness = 1.dp, modifier = Modifier.padding(vertical = 4.dp))
-                                                Text(text = "نسخه‌ی فعلی: 1.1")
                                                 Text(text = "تاریخ انتشار: خرداد ۱۴۰۴")
                                             }
                                         }
