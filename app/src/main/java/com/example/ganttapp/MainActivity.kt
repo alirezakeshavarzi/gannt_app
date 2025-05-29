@@ -130,7 +130,7 @@ class MainActivity : ComponentActivity() {
                             // List of view modes with custom icons
                             Column {
                                 NavigationDrawerItem(
-                                    label = { Text("DAY") },
+                                    label = { Text("Day") },
                                     selected = viewMode == ViewMode.DAY,
                                     onClick = {
                                         viewMode = ViewMode.DAY
@@ -146,7 +146,7 @@ class MainActivity : ComponentActivity() {
                                 )
 
                                 NavigationDrawerItem(
-                                    label = { Text("THREE DAYS") },
+                                    label = { Text("3 Days") },
                                     selected = viewMode == ViewMode.THREE_DAYS,
                                     onClick = {
                                         viewMode = ViewMode.THREE_DAYS
@@ -162,7 +162,7 @@ class MainActivity : ComponentActivity() {
                                 )
 
                                 NavigationDrawerItem(
-                                    label = { Text("WEEK") },
+                                    label = { Text("Week") },
                                     selected = viewMode == ViewMode.WEEK,
                                     onClick = {
                                         viewMode = ViewMode.WEEK
@@ -464,9 +464,9 @@ class MainActivity : ComponentActivity() {
                                                 )
                                                 Spacer(modifier = Modifier.height(2.dp))
                                                 Divider(thickness = 1.dp, modifier = Modifier.padding(vertical = 4.dp))
-                                                Text(text = "• نیما قدیمی")
-                                                Text(text = "• مانی مهانفر")
                                                 Text(text = "• علیرضا کشاورزی")
+                                                Text(text = "• مانی مهانفر")
+                                                Text(text = "• نیما قدیمی")
 
                                                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -495,7 +495,7 @@ class MainActivity : ComponentActivity() {
                                                 )
                                                 Spacer(modifier = Modifier.height(2.dp))
                                                 Divider(thickness = 1.dp, modifier = Modifier.padding(vertical = 4.dp))
-                                                Text(text = "نسخه‌ی فعلی: 1.0.0")
+                                                Text(text = "نسخه‌ی فعلی: 1.1")
                                                 Text(text = "تاریخ انتشار: خرداد ۱۴۰۴")
                                             }
                                         }
