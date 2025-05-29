@@ -19,17 +19,13 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.FileDownload
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Divider
@@ -68,7 +64,6 @@ import java.util.Locale
 @SuppressLint("CoroutineCreationDuringComposition", "UnusedMaterialScaffoldPaddingParameter")
 class MainActivity : ComponentActivity() {
 
-
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
             if (!isGranted) {
@@ -84,7 +79,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
             requestPermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
         }
@@ -96,9 +90,7 @@ class MainActivity : ComponentActivity() {
                 val monthFormatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault())
                 val tasks = remember { mutableStateListOf<Task>() }
 
-
                 val activity = LocalContext.current as Activity
-
 
                 var showAddDialog by remember { mutableStateOf(false) }
                 var showEditDialog by remember { mutableStateOf(false) }
@@ -109,10 +101,8 @@ class MainActivity : ComponentActivity() {
                 var showSearchDialog by remember { mutableStateOf(false) }
                 var searchQuery by remember { mutableStateOf("") }
 
-
                 var showSaveDialog by remember { mutableStateOf(false) }
                 var saveFileName by remember { mutableStateOf("gantt_report.pdf") }
-
 
                 var showAboutDialog by remember { mutableStateOf(false) }
 
@@ -127,32 +117,123 @@ class MainActivity : ComponentActivity() {
                     drawerState = drawerState,
                     drawerContent = {
                         ModalDrawerSheet {
-                            Spacer(Modifier.height(16.dp))
+                            Spacer(modifier = Modifier.height(24.dp))
 
+                            // Title at top of drawer
+                            Text(
+                                text = "Gantt Chart",
+                                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                                modifier = Modifier
+                                    .padding(start = 16.dp, bottom = 16.dp)
+                            )
 
-                            ViewMode.values().forEach { mode ->
+                            // List of view modes with custom icons
+                            Column {
                                 NavigationDrawerItem(
-                                    label = { Text(mode.name.replace("_", " ")) },
-                                    selected = mode == viewMode,
+                                    label = { Text("DAY") },
+                                    selected = viewMode == ViewMode.DAY,
                                     onClick = {
-                                        viewMode = mode
+                                        viewMode = ViewMode.DAY
                                         scope.launch { drawerState.close() }
                                     },
-                                    icon = { Icon(Icons.Default.CalendarToday, contentDescription = mode.name) }
+                                    icon = {
+                                        Icon(
+                                            imageVector = Icons.Default.ViewDay,
+                                            contentDescription = "Day View"
+                                        )
+                                    },
+                                    modifier = Modifier.padding(horizontal = 8.dp)
+                                )
+
+                                NavigationDrawerItem(
+                                    label = { Text("THREE DAYS") },
+                                    selected = viewMode == ViewMode.THREE_DAYS,
+                                    onClick = {
+                                        viewMode = ViewMode.THREE_DAYS
+                                        scope.launch { drawerState.close() }
+                                    },
+                                    icon = {
+                                        Icon(
+                                            imageVector = Icons.Default.ViewAgenda,
+                                            contentDescription = "Three Days View"
+                                        )
+                                    },
+                                    modifier = Modifier.padding(horizontal = 8.dp)
+                                )
+
+                                NavigationDrawerItem(
+                                    label = { Text("WEEK") },
+                                    selected = viewMode == ViewMode.WEEK,
+                                    onClick = {
+                                        viewMode = ViewMode.WEEK
+                                        scope.launch { drawerState.close() }
+                                    },
+                                    icon = {
+                                        Icon(
+                                            imageVector = Icons.Default.ViewWeek,
+                                            contentDescription = "Week View"
+                                        )
+                                    },
+                                    modifier = if (viewMode == ViewMode.WEEK) {
+                                        Modifier
+                                            .padding(horizontal = 8.dp)
+                                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+                                    } else {
+                                        Modifier.padding(horizontal = 8.dp)
+                                    }
+                                )
+
+                                NavigationDrawerItem(
+                                    label = { Text("Month") },
+                                    selected = viewMode == ViewMode.MONTH,
+                                    onClick = {
+                                        viewMode = ViewMode.MONTH
+                                        scope.launch { drawerState.close() }
+                                    },
+                                    icon = {
+                                        Icon(
+                                            imageVector = Icons.Default.CalendarViewMonth,
+                                            contentDescription = "Month View"
+                                        )
+                                    },
+                                    modifier = Modifier.padding(horizontal = 8.dp)
+                                )
+
+                                NavigationDrawerItem(
+                                    label = { Text("Year") },
+                                    selected = viewMode == ViewMode.YEAR,
+                                    onClick = {
+                                        viewMode = ViewMode.YEAR
+                                        scope.launch { drawerState.close() }
+                                    },
+                                    icon = {
+                                        Icon(
+                                            imageVector = Icons.Default.DateRange,
+                                            contentDescription = "Year View"
+                                        )
+                                    },
+                                    modifier = Modifier.padding(horizontal = 8.dp)
                                 )
                             }
 
+                            Spacer(modifier = Modifier.height(8.dp))
                             Divider(modifier = Modifier.padding(vertical = 8.dp))
 
-
+                            // About section replaced with the custom "About" design
                             NavigationDrawerItem(
-                                label = { Text("درباره ما") },
+                                label = { Text("About us") },
                                 selected = false,
                                 onClick = {
                                     showAboutDialog = true
                                     scope.launch { drawerState.close() }
                                 },
-                                icon = { Icon(Icons.Default.Info, contentDescription = "About Us") }
+                                icon = {
+                                    Icon(
+                                        imageVector = Icons.Default.CropSquare,
+                                        contentDescription = "About"
+                                    )
+                                },
+                                modifier = Modifier.padding(horizontal = 8.dp)
                             )
                         }
                     }
@@ -177,7 +258,6 @@ class MainActivity : ComponentActivity() {
                                     }
                                 },
                                 actions = {
-
                                     IconButton(onClick = { showSaveDialog = true }) {
                                         Icon(Icons.Default.FileDownload, contentDescription = "Save PDF")
                                     }
@@ -257,7 +337,6 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-
                             if (showAddDialog) {
                                 AddTaskDialog(
                                     existingTasks = tasks,
@@ -269,7 +348,6 @@ class MainActivity : ComponentActivity() {
                                     onDismiss = { showAddDialog = false }
                                 )
                             }
-
 
                             if (showEditDialog && editingTaskIndex >= 0) {
                                 EditTaskDialog(
@@ -288,7 +366,6 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-
                             if (showSearchDialog) {
                                 SearchTaskDialog(
                                     query = searchQuery,
@@ -306,7 +383,6 @@ class MainActivity : ComponentActivity() {
                                     }
                                 )
                             }
-
 
                             if (showSaveDialog) {
                                 AlertDialog(
@@ -347,8 +423,8 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-
                             if (showAboutDialog) {
+                                // You can keep or update the existing About dialog content here.
                                 AlertDialog(
                                     onDismissRequest = { showAboutDialog = false },
                                     confirmButton = {
@@ -433,9 +509,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-
     private fun saveReportAsPdf(activity: Activity, tasks: List<Task>, inputFileName: String) {
-
         var fileName = inputFileName.trim()
         if (!fileName.lowercase(Locale.getDefault()).endsWith(".pdf")) {
             fileName += ".pdf"
@@ -443,7 +517,6 @@ class MainActivity : ComponentActivity() {
 
         val window = activity.window
         val view = window.decorView
-
 
         view.post {
             val width = view.width
@@ -453,25 +526,21 @@ class MainActivity : ComponentActivity() {
                 return@post
             }
 
-
             val chartBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-
                 val location = IntArray(2)
                 view.getLocationInWindow(location)
                 val rect = Rect(location[0], location[1], location[0] + width, location[1] + height)
 
                 PixelCopy.request(window, rect, chartBitmap, { copyResult ->
                     if (copyResult == PixelCopy.SUCCESS) {
-
                         createPdfDocument(activity, tasks, chartBitmap, fileName)
                     } else {
                         Toast.makeText(this, "خطا در گرفتن نمودار ($copyResult)", Toast.LENGTH_LONG).show()
                     }
                 }, Handler(Looper.getMainLooper()))
             } else {
-
                 val canvas = Canvas(chartBitmap)
                 view.draw(canvas)
                 createPdfDocument(activity, tasks, chartBitmap, fileName)
@@ -479,18 +548,15 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-
     private fun createPdfDocument(
         activity: Activity,
         tasks: List<Task>,
         chartBitmap: Bitmap,
         fileName: String
     ) {
-
         val today = LocalDate.now()
         val formattedDate = today.format(DateTimeFormatter.ofPattern("yyyy/MM/dd"))
         val persianDate = convertLatinDigitsToPersian(formattedDate)
-
 
         val paint = Paint().apply {
             isAntiAlias = true
@@ -503,7 +569,6 @@ class MainActivity : ComponentActivity() {
             textAlign = Paint.Align.LEFT
         }
 
-
         val headerHeight = 180
         val rowHeight = 60
         val tableHeaderHeight = rowHeight
@@ -514,14 +579,12 @@ class MainActivity : ComponentActivity() {
         val pdfWidth = chartBitmap.width
         val pdfHeight = headerHeight + tableHeight + dividerHeight + ganttLabelHeight + chartBitmap.height + bottomMargin
 
-
         val document = PdfDocument()
         val pageInfo = PdfDocument.PageInfo.Builder(pdfWidth, pdfHeight, 1).create()
         val page = document.startPage(pageInfo)
         val canvas = page.canvas
 
         val centerX = (pdfWidth / 2).toFloat()
-
 
         canvas.drawText(
             "───────────────────────────────────────────────",
@@ -548,7 +611,6 @@ class MainActivity : ComponentActivity() {
             paint
         )
 
-
         val startTableY = headerHeight.toFloat()
         val col1X = 20f
         val col2X = 120f
@@ -563,15 +625,17 @@ class MainActivity : ComponentActivity() {
         canvas.drawText("تاریخ پایان", col4X, startTableY, smallPaint)
         canvas.drawText("مدت زمان", col5X, startTableY, smallPaint)
 
-
         var currentY = startTableY + rowHeight
         smallPaint.textSize = 24f
         tasks.forEachIndexed { index, task ->
-
             val rowNumPersian = convertLatinDigitsToPersian((index + 1).toString())
 
-            val startPersian = convertLatinDigitsToPersian(task.startDate().format(DateTimeFormatter.ofPattern("yyyy/MM/dd")))
-            val endPersian = convertLatinDigitsToPersian(task.endDate().format(DateTimeFormatter.ofPattern("yyyy/MM/dd")))
+            val startPersian = convertLatinDigitsToPersian(
+                task.startDate().format(DateTimeFormatter.ofPattern("yyyy/MM/dd"))
+            )
+            val endPersian = convertLatinDigitsToPersian(
+                task.endDate().format(DateTimeFormatter.ofPattern("yyyy/MM/dd"))
+            )
 
             val days = ChronoUnit.DAYS.between(task.startDate(), task.endDate()).toInt()
             val durationPersian = "${convertLatinDigitsToPersian(days.toString())} روز"
@@ -585,7 +649,6 @@ class MainActivity : ComponentActivity() {
             currentY += rowHeight
         }
 
-
         paint.textAlign = Paint.Align.CENTER
         paint.textSize = 32f
         canvas.drawText(
@@ -596,16 +659,12 @@ class MainActivity : ComponentActivity() {
         )
         currentY += dividerHeight
 
-
         canvas.drawText("Gantt Chart", centerX, currentY.toFloat(), paint)
         currentY += ganttLabelHeight
 
-
         canvas.drawBitmap(chartBitmap, 0f, currentY.toFloat(), null)
 
-
         document.finishPage(page)
-
 
         val docsDir = activity.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
         if (docsDir == null) {
@@ -633,7 +692,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-
     private fun convertLatinDigitsToPersian(input: String): String {
         val map = mapOf(
             '0' to '۰', '1' to '۱', '2' to '۲', '3' to '۳', '4' to '۴',
@@ -646,7 +704,6 @@ class MainActivity : ComponentActivity() {
         return builder.toString()
     }
 }
-
 
 @Composable
 fun SearchTaskDialog(
