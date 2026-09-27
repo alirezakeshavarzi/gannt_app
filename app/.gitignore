@@ -1,1 +1,32 @@
 /build
+# Gradle
+.gradle/
+build/
+*/build/
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+
+# Local configuration
+local.properties
+
+# Generated files
+captures/
+.externalNativeBuild/
+.cxx/
+
+# APK / App Bundle
+*.apk
+*.aab
+
+# Signing files
+*.jks
+*.keystore
+
+# Firebase / Google services
+google-services.json
+
+# OS files
+.DS_Store
+Thumbs.db
